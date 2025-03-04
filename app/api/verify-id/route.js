@@ -5,9 +5,18 @@ export async function POST(request) {
   try {
     const { idNumber } = await request.json();
     
-    // Basic Auth credentials
-    const username = "api-a38c3b17ae";
-    const password = "qLbDp4XkIEqHXIGNQ4FV53N4fnmVZyz29JY";
+    // Get credentials from environment variables
+    const username = process.env.IDENTIFY_AFRICA_API_USERNAME;
+    const password = process.env.IDENTIFY_AFRICA_API_PASSWORD;
+    
+    // Check if credentials are available
+    if (!username || !password) {
+      console.error("Missing API credentials in environment variables");
+      return NextResponse.json({
+        success: false,
+        message: "Server configuration error",
+      }, { status: 500 });
+    }
     
     // Create Basic Auth header
     const basicAuth = "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
