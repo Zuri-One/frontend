@@ -72,6 +72,7 @@ export default function Home() {
   const [livenessStage, setLivenessStage] = useState(0);
   const [livenessComplete, setLivenessComplete] = useState(false);
   const [stream, setStream] = useState(null);
+  const [phoneData, setPhoneData] = useState(null);
   const [livenessImage, setLivenessImage] = useState(null);
   
   const livenessInstructions = [
@@ -351,6 +352,60 @@ export default function Home() {
     }
   };
   
+
+  // Replace sendOtp function with this new function for phone verification
+const verifyPhoneNumber = async () => {
+  if (!phoneNumber) {
+    setError("Please enter your phone number");
+    return;
+  }
+  
+  // Validate phone number format
+  const phoneRegex = /^\d{10,12}$/;
+  if (!phoneRegex.test(phoneNumber.replace(/\+/g, ''))) {
+    setError("Please enter a valid phone number");
+    return;
+  }
+  
+  setLoading(true);
+  setError(null);
+  
+  try {
+    // Format the phone number
+    let formattedNumber = phoneNumber;
+    if (!formattedNumber.startsWith('+')) {
+      formattedNumber = '+' + formattedNumber;
+    }
+    
+    // Call the new phone verification API
+    const response = await fetch("/api/verify-phone", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        phoneNumber: formattedNumber
+      }),
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Store the phone data
+      setPhoneData(result.data);
+      setOtpVerified(true);
+      setSuccess(`Phone number verified successfully for ${result.data.name}`);
+      setTimeout(() => setSuccess(null), 3000);
+    } else {
+      setError(result.message || "Failed to verify phone number");
+    }
+  } catch (error) {
+    setError("Error verifying phone number. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
   // Verify OTP
   const verifyOtp = () => {
     if (!otpCode) {
@@ -705,7 +760,7 @@ export default function Home() {
                           </button>
                         </div>
                         
-                        {idData && (
+                        {/* {idData && (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
@@ -741,7 +796,7 @@ export default function Home() {
                               </div>
                             </div>
                           </motion.div>
-                        )}
+                        )} */}
                         
                         <div className="space-y-2">
                           <Label htmlFor="id-number" className="text-[#2e1607] font-medium">ID Number</Label>
@@ -1095,81 +1150,75 @@ export default function Home() {
                       />
                     </div>
                     
-                    {/* Phone Number Verification Section */}
-                    <div className="space-y-3 border rounded-lg p-4 bg-[#2e1607]/5 border-[#2e1607]/10 shadow-sm">
-                      <Label htmlFor="phone-number" className="text-[#2e1607] font-medium block">
-                        Phone Number Verification
-                      </Label>
-                      
-                      <div className="space-y-3">
-                        {!otpVerified ? (
-                          <>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              <Input
-                                id="phone-number"
-                                type="tel"
-                                value={phoneNumber}
-                                onChange={(e) => setPhoneNumber(e.target.value)}
-                                placeholder="Enter phone number (e.g., 254712345678)"
-                                disabled={otpSent}
-                                className="flex-grow border-[#e76c21]/30 focus:border-[#e76c21] focus:ring-[#e76c21]/20 py-2"
-                              />
-                              <Button 
-                                onClick={sendOtp}
-                                disabled={loading || !phoneNumber || otpVerified}
-                                className="bg-[#2e1607] hover:bg-[#2e1607]/80 text-white whitespace-nowrap"
-                              >
-                                {loading && !otpSent ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Sending...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Phone className="mr-2 h-4 w-4" />
-                                    Send OTP
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                            
-                            {otpSent && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                className="space-y-2"
-                              >
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <Input
-                                    id="otp-code"
-                                    value={otpCode}
-                                    onChange={(e) => setOtpCode(e.target.value)}
-                                    placeholder="Enter 6-digit OTP sent to WhatsApp"
-                                    className="flex-grow border-[#e76c21]/30 focus:border-[#e76c21] focus:ring-[#e76c21]/20 py-2"
-                                    maxLength={6}
-                                  />
-                                  <Button 
-                                    onClick={verifyOtp}
-                                    disabled={loading || !otpCode}
-                                    className="bg-[#2e1607] hover:bg-[#2e1607]/80 text-white whitespace-nowrap"
-                                  >
-                                    Verify OTP
-                                  </Button>
-                                </div>
-                                <p className="text-xs text-[#2e1607]/70 italic">
-                                  A verification code has been sent to your WhatsApp. Please enter the code to complete verification.
-                                </p>
-                              </motion.div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-md">
-                            <CheckCircle2 className="h-5 w-5" />
-                            <span className="font-medium">Phone number verified successfully</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+{/* Phone Number Verification Section */}
+<div className="space-y-3 border rounded-lg p-4 bg-[#2e1607]/5 border-[#2e1607]/10 shadow-sm">
+  <Label htmlFor="phone-number" className="text-[#2e1607] font-medium block">
+    Phone Number Verification
+  </Label>
+  
+  <div className="space-y-3">
+    {!otpVerified ? (
+      <>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            id="phone-number"
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="Enter phone number (e.g., 254712345678)"
+            className="flex-grow border-[#e76c21]/30 focus:border-[#e76c21] focus:ring-[#e76c21]/20 py-2"
+          />
+          <Button 
+            onClick={verifyPhoneNumber}
+            disabled={loading || !phoneNumber || otpVerified}
+            className="bg-[#2e1607] hover:bg-[#2e1607]/80 text-white whitespace-nowrap"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              <>
+                <Phone className="mr-2 h-4 w-4" />
+                Verify Phone
+              </>
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-[#2e1607]/70 italic">
+          Enter your Safaricom phone number for verification
+        </p>
+      </>
+    ) : (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        className="space-y-2"
+      >
+        <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-md">
+          <CheckCircle2 className="h-5 w-5" />
+          <span className="font-medium">Phone number verified successfully</span>
+        </div>
+        
+        {phoneData && (
+          <div className="bg-white p-3 rounded-md border border-[#e76c21]/20 mt-2">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <p className="text-[#2e1607]/70">Name:</p>
+                <p className="font-medium text-[#2e1607]">{phoneData.name}</p>
+              </div>
+              <div>
+                <p className="text-[#2e1607]/70">Provider:</p>
+                <p className="font-medium text-[#2e1607]">{phoneData.institution}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    )}
+  </div>
+</div>
                     
                     {error && (
                       <Alert variant="destructive" className="border-red-300 bg-red-50">
